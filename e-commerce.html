@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My E-Commerce Shop</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background:#d3d3d3; color:#333; line-height:1.6; }
+
+    /* Navbar */
+    header { background:#34495e; color:white; padding:15px 40px; display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #2c3e50; }
+    header h2 { font-size:24px; font-weight:600; }
+    nav a { color:white; margin-left:20px; text-decoration:none; font-weight:500; transition:0.3s; }
+    nav a:hover { color:#1abc9c; }
+
+    /* Sections */
+    section { display:none; padding:30px 40px; }
+    section.active { display:block; }
+    h3 { margin-bottom:20px; color:#2c3e50; }
+
+    /* Products grid: exactly 4 per row */
+    .products, .cart-items { display:grid; grid-template-columns: repeat(4, 1fr); gap:25px; }
+    .product, .cart-item { background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); padding:20px; transition:transform 0.3s, box-shadow 0.3s; position:relative; }
+    .product:hover { transform: translateY(-6px); box-shadow:0 8px 20px rgba(0,0,0,0.12); }
+    .product h4 { font-size:18px; margin:10px 0; color:#2c3e50; }
+    .product p { font-size:14px; color:#555; }
+
+    /* Stickers / Badges */
+    .sticker { position:absolute; top:15px; left:15px; background:#e74c3c; color:white; padding:5px 8px; font-size:12px; font-weight:bold; border-radius:5px; }
+    .category { position:absolute; top:15px; right:15px; background:#3498db; color:white; padding:5px 8px; font-size:12px; font-weight:bold; border-radius:5px; }
+
+    /* Product image */
+    .product img { width:100%; height:150px; object-fit:cover; border-radius:8px; margin-bottom:10px; }
+
+    /* Price */
+    .price { font-weight:bold; color:#16a085; font-size:16px; margin-top:8px; }
+
+    /* Buttons */
+    button { cursor:pointer; background:#16a085; color:white; border:none; padding:10px 15px; border-radius:8px; font-weight:bold; transition:0.3s; }
+    button:hover { background:#1abc9c; transform: translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+
+    /* Forms */
+    form { background:white; padding:25px; border-radius:12px; max-width:400px; margin:auto; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    input { width:100%; padding:10px; margin:12px 0; border-radius:8px; border:1px solid #ccc; transition:0.3s; }
+    input:focus { outline:none; border-color:#16a085; }
+
+    /* Cart & Checkout */
+    .cart-item h4 { margin-bottom:6px; color:#2c3e50; }
+    .total { font-size:18px; font-weight:bold; margin-top:15px; color:#16a085; }
+
+    /* Footer */
+    footer { text-align:center; padding:15px; background:#34495e; color:white; margin-top:40px; font-weight:500; }
+
+    /* Responsive */
+    @media(max-width:1200px) { .products { grid-template-columns: repeat(3, 1fr); } }
+    @media(max-width:900px) { .products { grid-template-columns: repeat(2,1fr); } }
+    @media(max-width:600px) { .products { grid-template-columns: 1fr; } header h2 { font-size:20px; } nav a { margin-left:10px; font-size:14px; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>🛍 My Shop</h2>
+  <nav>
+    <a href="#" onclick="showPage('home')">Home</a>
+    <a href="#" onclick="showPage('cart')">Cart (<span id="cart-count">0</span>)</a>
+    <a href="#" onclick="showPage('login')">Login</a>
+    <a href="#" onclick="showPage('register')">Register</a>
+  </nav>
+</header>
+
+<section id="home" class="active">
+  <h3>✨ Featured Products</h3>
+  <div class="products" id="product-list"></div>
+</section>
+
+<section id="product-details">
+  <h3 id="detail-title"></h3>
+  <img id="detail-img" src="" alt="Product Image">
+  <p id="detail-desc"></p>
+  <p class="price">Price: ₹<span id="detail-price"></span></p>
+  <button onclick="addToCart(currentProduct)">Add to Cart</button>
+  <button onclick="showPage('home')">Back</button>
+</section>
+
+<section id="cart">
+  <h3>🛒 Your Cart</h3>
+  <div class="cart-items" id="cart-items"></div>
+  <p class="total">Total: ₹<span id="cart-total">0</span></p>
+  <button onclick="showPage('checkout')">Proceed to Checkout</button>
+</section>
+
+<section id="checkout">
+  <h3>✅ Checkout</h3>
+  <p>Confirm your order below:</p>
+  <button onclick="placeOrder()">Place Order</button>
+  <button onclick="showPage('cart')">Back to Cart</button>
+</section>
+
+<section id="login">
+  <h3>🔑 Login</h3>
+  <form onsubmit="login(event)">
+    <input type="text" id="login-username" placeholder="Username" required>
+    <input type="password" id="login-password" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
+</section>
+
+<section id="register">
+  <h3>📝 Register</h3>
+  <form onsubmit="register(event)">
+    <input type="text" id="register-username" placeholder="Username" required>
+    <input type="password" id="register-password" placeholder="Password" required>
+    <button type="submit">Register</button>
+  </form>
+</section>
+
+<footer>
+  © 2025 My Shop | Built with ❤️ in HTML, CSS & JS
+</footer>
+
+<script>
+const products = [
+  {id:1,name:"Laptop",price:80000,desc:"💻 High performance laptop.",img:"https://img.freepik.com/premium-photo/picture-laptop_931878-305748.jpg",sticker:"New",category:"Electronics"},
+  {id:2,name:"Smartphone",price:50000,desc:"📱 Latest smartphone.",img:"https://tse3.mm.bing.net/th/id/OIP.3m-Dt58Xz4i7Nf6tlai3UAHaJL?pid=Api&P=0&h=180",sticker:"Sale",category:"Electronics"},
+  {id:3,name:"Headphones",price:10000,desc:"🎧 Noise cancelling headphones.",img:"https://tse3.mm.bing.net/th/id/OIP.OZFBOseo1dhu-PssNGtuGAHaHa?pid=Api&P=0&h=180",sticker:"Hot",category:"Electronics"},
+  {id:4,name:"Smartwatch",price:15000,desc:"⌚ Stylish smartwatch.",img:"https://tse1.mm.bing.net/th/id/OIP.LP2HLdYAdqsAhoSQiNwuvQHaHa?pid=Api&P=0&h=180",sticker:"New",category:"Electronics"},
+  {id:5,name:"T-Shirt",price:800,desc:"👕 Comfortable cotton t-shirt.",img:"https://tse2.mm.bing.net/th/id/OIP.qdUTb8QhNB_oLBlJ0GsG8AHaHa?pid=Api&P=0&h=180",sticker:"New",category:"Clothes"},
+  {id:6,name:"Jeans",price:1500,desc:"👖 Stylish denim jeans.",img:"https://tse2.mm.bing.net/th/id/OIP.WxAnvfJ-LZ5MmUsohiofCAHaJQ?pid=Api&P=0&h=180",sticker:"Sale",category:"Clothes"},
+  {id:7,name:"Jacket",price:3000,desc:"🧥 Winter jacket.",img:"https://tse1.mm.bing.net/th/id/OIP.S5M0iXcsiascXd9mYDdlPgHaHa?pid=Api&P=0&h=180",sticker:"Hot",category:"Clothes"},
+  {id:8,name:"Sneakers",price:2500,desc:"👟 Comfortable sneakers.",img:"https://tse4.mm.bing.net/th/id/OIP.MdISSIcBaf_laMt5wK2pdgHaG5?pid=Api&P=0&h=180",sticker:"New",category:"Clothes"},
+  {id:9,name:"Apples",price:200,desc:"🍎 Fresh red apples.",img:"https://tse2.mm.bing.net/th/id/OIP.nKkm0wnm9J-Ko2rny3mAzAHaIo?pid=Api&P=0&h=180",sticker:"New",category:"Grocery"},
+  {id:10,name:"Bananas",price:100,desc:"🍌 Sweet ripe bananas.",img:"https://tse1.mm.bing.net/th/id/OIP.fq6VMNnUgGmrWCmjrE6WsQHaGG?pid=Api&P=0&h=180",sticker:"Sale",category:"Grocery"},
+  {id:11,name:"Milk",price:50,desc:"🥛 Fresh cow milk.",img:"https://tse3.mm.bing.net/th/id/OIP.jaBmK0WLlMgFbuJ01_lpnwAAAA?pid=Api&P=0&h=180",sticker:"Hot",category:"Grocery"},
+  {id:12,name:"Bread",price:40,desc:"🍞 Whole wheat bread.",img:"https://tse2.mm.bing.net/th/id/OIP.EIllF137LV0o_pvoQTk6JAHaKX?pid=Api&P=0&h=180",sticker:"New",category:"Grocery"},
+  {id:13,name:"Lipstick",price:500,desc:"💄 Matte finish lipstick.",img:"https://tse2.mm.bing.net/th/id/OIP.5ct30DBb5G5VnoORsv8j3wHaHa?pid=Api&P=0&h=180",sticker:"New",category:"Beauty"},
+  {id:14,name:"Perfume",price:2500,desc:"🌸 Floral fragrance perfume.",img:"https://tse4.mm.bing.net/th?id=OIF.ia%2feKIlj0N4debFG7RAtLw&pid=Api&P=0&h=180",sticker:"Sale",category:"Beauty"},
+  {id:15,name:"Skincare Cream",price:800,desc:"🧴 Moisturizing cream.",img:"https://tse1.mm.bing.net/th/id/OIP.TaVoGvNWszvKeiGI8m_vgAHaHa?pid=Api&P=0&h=180",sticker:"Hot",category:"Beauty"},
+  {id:16,name:"Nail Polish",price:300,desc:"💅 Bright colored nail polish.",img:"https://tse4.mm.bing.net/th/id/OIP.YHCBatOxX3o5IUc5m8m8mQHaHa?pid=Api&P=0&h=180",sticker:"New",category:"Beauty"}
+];
+
+let cart=JSON.parse(localStorage.getItem("cart"))||[];
+let users=JSON.parse(localStorage.getItem("users"))||[];
+let currentUser=localStorage.getItem("currentUser")||null;
+let currentProduct=null;
+
+function showPage(page){
+  document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(page).classList.add("active");
+  if(page==="home") renderProducts();
+  if(page==="cart") renderCart();
+}
+
+function renderProducts(){
+  const list=document.getElementById("product-list");
+  list.innerHTML="";
+  products.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="product";
+    div.innerHTML=`
+      <div class="sticker">${p.sticker}</div>
+      <div class="category">${p.category}</div>
+      <img src="${p.img}" alt="${p.name}">
+      <h4>${p.name}</h4>
+      <p class="price">₹${p.price}</p>
+      <button onclick="viewDetails(${p.id})">View Details</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function viewDetails(id){
+  currentProduct=products.find(p=>p.id===id);
+  document.getElementById("detail-title").innerText=currentProduct.name;
+  document.getElementById("detail-desc").innerText=currentProduct.desc;
+  document.getElementById("detail-price").innerText=currentProduct.price;
+  document.getElementById("detail-img").src=currentProduct.img;
+  showPage("product-details");
+}
+
+function addToCart(product){
+  let item=cart.find(i=>i.id===product.id);
+  if(item) item.quantity++;
+  else cart.push({...product,quantity:1});
+  localStorage.setItem("cart",JSON.stringify(cart));
+  updateCartCount();
+  alert("✅ Added to cart!");
+}
+
+function renderCart(){
+  const items=document.getElementById("cart-items");
+  items.innerHTML="";
+  let total=0;
+  cart.forEach(c=>{
+    total+=c.price*c.quantity;
+    items.innerHTML+=`<div class="cart-item"><h4>${c.name}</h4><p>₹${c.price} x ${c.quantity}</p></div>`;
+  });
+  document.getElementById("cart-total").innerText=total;
+}
+
+function updateCartCount(){
+  document.getElementById("cart-count").innerText=cart.reduce((a,c)=>a+c.quantity,0);
+}
+
+function placeOrder(){
+  if(!currentUser){ alert("⚠️ Please login first to place an order!"); showPage("login"); return; }
+  cart=[];
+  localStorage.setItem("cart",JSON.stringify(cart));
+  updateCartCount();
+  alert("🎉 Order placed successfully!");
+  showPage("home");
+}
+
+function register(e){
+  e.preventDefault();
+  const username=document.getElementById("register-username").value;
+  const password=document.getElementById("register-password").value;
+  if(users.find(u=>u.username===username)){ alert("⚠️ Username already exists!"); return; }
+  users.push({username,password});
+  localStorage.setItem("users",JSON.stringify(users));
+  alert("✅ Registered successfully! Please login.");
+  showPage("login");
+}
+
+function login(e){
+  e.preventDefault();
+  const username=document.getElementById("login-username").value;
+  const password=document.getElementById("login-password").value;
+  const user=users.find(u=>u.username===username && u.password===password);
+  if(user){ currentUser=username; localStorage.setItem("currentUser",username); alert("✅ Login successful!"); showPage("home"); }
+  else alert("❌ Invalid credentials!");
+}
+
+// Initialize
+updateCartCount();
+showPage("home");
+</script>
+
+</body>
+</html>
